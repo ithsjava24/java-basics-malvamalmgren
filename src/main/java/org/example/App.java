@@ -1,28 +1,14 @@
 package org.example;
 
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Scanner;
+import java.util.*;
 
 public class App {
-
-//    private int[] prices = new int[24];
-//
-//    public App(int[] prices) {
-//        this.prices = prices;
-//    }
-//
-//    public void setPrices(int[] prices) {
-//        this.prices = prices;
-//    }
 
 
     public static void main(String[] args) {
         Locale locale = new Locale("sv", "SE");
         Locale.setDefault(locale);
         Scanner sc = new Scanner(System.in);
-
-        String choice = "";
 
         String[] hours = new String[24];
         for (int i = 0; i < 24; i++) {
@@ -32,6 +18,9 @@ public class App {
         }
 
         ArrayList<Integer> pricePerHour = new ArrayList<>(24);
+
+        String choice = "";
+
         while (!choice.equalsIgnoreCase("e")) {
             printMenu();
             choice = sc.nextLine().toLowerCase();
@@ -55,7 +44,18 @@ public class App {
                             + "Medelpris: " + String.format("%.2f", stats.average()) + " öre/kWh\n");
                     break;
                 case "3":
-                    System.out.println("");
+                    if (pricePerHour.isEmpty()) {
+                        throw new RuntimeException();
+                        //System.out.println("Listan är tom, inget att sortera.");
+                        //continue;
+                    }
+                    //sortering
+                    ValueAndIndex priceAndHour = new ValueAndIndex(pricePerHour, hours);
+                    sortPrices(priceAndHour);
+//                    for (ValueAndIndex v : priceAndHour) {
+//                        System.out.println("Index: " + v.index() + " Value: " + v.value());
+//                    }
+
                     break;
                 case "4":
                     System.out.println("");
@@ -93,6 +93,57 @@ public class App {
 //        System.out.println("Hello There!");
 
 
+    }
+    record ValueAndIndex(ArrayList<Integer> value, String[] index) {}
+
+    private static void sortPrices(ValueAndIndex priceAndHour) {
+        //3. ValueAndIndex priceAndHour = new ValueAndIndex(pricePerHour, hours);
+        //vill ha priserna och timmarna, kopior
+        ArrayList<Integer> pricePerHour = priceAndHour.value;
+        String[] hours = new String[priceAndHour.index.length];
+        System.out.println("HI 1");
+
+        //temps
+//        ArrayList<Integer> sortedPrices = new ArrayList<>(pricePerHour);
+//        String[] sortedHours = new String[pricePerHour.size()];
+
+        //sortera ören
+        for (int i = 0; i < pricePerHour.size(); i++) {
+            int max = pricePerHour.get(i);
+            for (int j = i + 1; j < pricePerHour.size(); j++) {
+                if (pricePerHour.get(j) > max) {
+                    max = j;
+                }
+            }
+            int tempPrice = pricePerHour.get(i);
+            pricePerHour.set(i, pricePerHour.get(max));
+            pricePerHour.set(max, tempPrice);
+
+            String tempHour = hours[i];
+            hours[i] = hours[max];
+            hours[max] = tempHour;
+
+        }
+
+
+//        for (int i = 0; i < pricePerHour.size(); i++) { //Går genom priserna
+//            int maxIndex = i;
+//            for (int j = i + 1; j < hours.length; j++) {
+//                if (pricePerHour.get(j) > pricePerHour.get(maxIndex)) {
+//
+//                }
+//            }
+//        }
+        System.out.println("HI 2");
+
+        System.out.println("HI 3");
+        //ha index för vilken timma
+
+        //PRINT
+//        for (ValueAndIndex v : priceAndHour) {
+//            System.out.println("Index: " + v.index() + " Value: " + v.value());
+//        }
+//        System.out.print();
     }
 
     private static void printMenu() {
