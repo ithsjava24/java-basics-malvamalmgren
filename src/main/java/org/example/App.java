@@ -6,19 +6,14 @@ public class App {
 
 
     public static void main(String[] args) {
-        Locale locale = new Locale("sv", "SE");
-        Locale.setDefault(locale);
+        Locale.setDefault(new Locale("sv", "SE"));
         Scanner sc = new Scanner(System.in);
 
         String[] hours = new String[24];
-//        for (int i = 0; i < 24; i++) {
-//            String hour1 = String.format("%02d", i);
-//            String hour2 = String.format("%02d", (i + 1) % 24);
-//            hours[i] = hour1 + "-" + hour2;
-//        }
+
         for (int i = 0; i < 24; i++) {
             String hour1 = String.format("%02d", i);
-            String hour2 = (i == 23) ? "24" : String.format("%02d", (i + 1) % 24); // Fixar 23-24 formatet
+            String hour2 = (i == 23) ? "24" : String.format("%02d", (i + 1) % 24);
             hours[i] = hour1 + "-" + hour2;
         }
 
@@ -33,12 +28,8 @@ public class App {
 
             switch (choice) {
                 case "1" ->
-                    // Inmatning av elpriser för 24 timmar
                         input(hours, pricePerHour, sc);
                 case "2" -> {
-                    //När alternativ 2 väljs på menyn så ska programmet skriva ut lägsta priset, högsta priset samt vilka
-                    //timmar som detta infaller under dygnet. Dygnets medelpris ska också räknas fram och presenteras
-                    //på skärmen. Se testerna för önskat format på utmatningen.
                     if (pricePerHour.isEmpty()) {
                         System.out.println("Listan är tom.");
                         continue;
@@ -53,46 +44,53 @@ public class App {
                         System.out.println("Listan är tom, inget att sortera.");
                         continue;
                     }
-                    //sortering
-//                    ValueAndIndex priceAndHour = new ValueAndIndex(pricePerHour, hours);
-//                    sortPrices(priceAndHour);
+
                     List<ValueAndIndex> priceAndHourList = new ArrayList<>();
                     for (int i = 0; i < pricePerHour.size(); i++) {
                         priceAndHourList.add(new ValueAndIndex(pricePerHour.get(i), hours[i]));
                     }
                     sortPrices(priceAndHourList);
 
-                    // Output sorted prices and hours
                     for (ValueAndIndex v : priceAndHourList) {
                         System.out.print("\n" + v.hour() + " " + v.price() + " öre");
                     }
                     System.out.print("\n");
                 }
-                    case "4" -> System.out.println("");
+                case "4" -> {
+                    if (pricePerHour.size() < 4) {
+                        System.out.println("Listan är tom.");
+                        continue;
+                    }
+
+                    int minSum = Integer.MAX_VALUE;
+                    int startIndex = 0;
+
+                    for (int i = 0; i <= pricePerHour.size() - 4; i++) {
+                        int sum = 0;
+                        for (int j = i; j < i + 4; j++) {
+                            sum += pricePerHour.get(j);
+                        }
+                        if (sum < minSum) {
+                            minSum = sum;
+                            startIndex = i;
+                        }
+                    }
+
+                    float averagePrice = (float) minSum / 4;
+
+                    String startTime = hours[startIndex].substring(0, 2);
+
+                    System.out.print("Påbörja laddning klockan " + startTime + "\n");
+                    System.out.print("Medelpris 4h: " + String.format("%.1f", averagePrice) + " öre/kWh\n");
+
+                }
                 case "5" -> System.out.println("");
                 case "e" -> System.out.println("");
                 default -> System.out.print("Otillåtet svar, välj ett av alternativen...\n");
             }
         }
-
-        //Sortera!
     }
 
-//        1. Inmatning
-//        Senaste året har elpriserna blivit högre och varierar mycket. Det här programmet ska kunna hjälpa
-//        till med att analysera elpriser för ett dygn. När man väljer alternativet inmatning från menyn ska
-//        programmet fråga efter priserna under dygnets timmar. Inmatningen av värden ska ske med hela
-//        ören. T.ex. kan priser vara 50 102 eller 680 öre per kW/h. Priset sätts per intervall mellan två hela
-//        timmar. Dygnets första pris är då mellan 00-01, andra intervallet är mellan 01-02 osv
-
-
-//        float f = 2.3f;
-//        String.format("%.2f", f).replace('.', ',');
-//        System.out.printf(Locale.of("sv", "SE"), "%.2f", f);
-//        System.out.println("Hello There!");
-
-
-    //class ValueAndIndex(ArrayList<Integer> value, String[] index) {}
     static class ValueAndIndex implements Comparable<ValueAndIndex> {
         private int price;
         private String hour;
@@ -112,12 +110,12 @@ public class App {
 
         @Override
         public int compareTo(ValueAndIndex other) {
-            return Integer.compare(other.price, this.price); // Sort by price in descending order
+            return Integer.compare(other.price, this.price);
         }
     }
 
     private static void sortPrices(List<ValueAndIndex> priceAndHourList) {
-        Collections.sort(priceAndHourList); // Sort based on price, using the Comparable interface
+        Collections.sort(priceAndHourList);
     }
 
     private static void printMenu() {
@@ -153,7 +151,7 @@ public class App {
             total += price;
         }
 
-        float average = (float) total / pricePerHour.size(); // Medelvärdet som float
+        float average = (float) total / pricePerHour.size();
 
         return new Statistics(min, minIndex, max, maxIndex, average);
     }
@@ -161,8 +159,6 @@ public class App {
     private static void input(String[] hours, ArrayList<Integer> pricePerHour, Scanner sc) {
         pricePerHour.clear();
         for (int i = 0; i < 24; i++) {
-//            if (i <= 0)
-//                throw new IllegalArgumentException();
             System.out.print("Ange elpriset i hela ören för kl. " + hours[i] + ": ");
             pricePerHour.add(sc.nextInt()); // Mata in priset i ören
         }
@@ -189,16 +185,8 @@ class Statistics {
         return min;
     }
 
-    public int minIndex() {
-        return minIndex;
-    }
-
     public int max() {
         return max;
-    }
-
-    public int maxIndex() {
-        return maxIndex;
     }
 
     public float average() {
