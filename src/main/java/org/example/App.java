@@ -3,37 +3,37 @@ package org.example;
 import java.util.*;
 
 public class App {
-
+    static ArrayList<Integer> pricePerHour;
+    static String[] hours;
 
     public static void main(String[] args) {
         Locale.setDefault(new Locale("sv", "SE"));
         Scanner sc = new Scanner(System.in);
 
-        String[] hours = new String[24];
+        hours = new String[24];
         for (int i = 0; i < 24; i++) {
-            String hour1 = String.format("%02d", i);
-            String hour2 = (i == 23) ? "24" : String.format("%02d", (i + 1) % 24);
-            hours[i] = hour1 + "-" + hour2;
+            hours[i] = String.format("%02d", i) + "-" + String.format("%02d", i + 1);
         }
 
-        ArrayList<Integer> pricePerHour = new ArrayList<>(24);
+        pricePerHour = new ArrayList<>(24);
 
         String choice = "";
 
-        while (!choice.equalsIgnoreCase("e")) {
+        while (!choice.equals("e")) {
             printMenu();
             choice = sc.nextLine().toLowerCase();
 
             switch (choice) {
-                case "1" -> inputPrices(hours, pricePerHour, sc);
-                case "2" -> printMinMaxAverage(hours, pricePerHour);
-                case "3" -> sortAndPrintPrices(hours, pricePerHour);
-                case "4" -> cheapestChargingPeriod(hours, pricePerHour);
-                case "5" -> System.out.println("");
-                case "e" -> System.out.println("");
+                case "1" -> inputPrices(sc);
+                case "2" -> printMinMaxAverage();
+                case "3" -> sortAndPrintPrices();
+                case "4" -> cheapestChargingPeriod();
+                case "5" -> visualization();
+                case "e" -> System.out.println("Avslutar programmet...");
                 default -> System.out.print("Otillåtet svar, välj ett av alternativen...\n");
             }
         }
+        sc.close();
     }
 
     private static void printMenu() {
@@ -44,12 +44,13 @@ public class App {
                 2. Min, Max och Medel
                 3. Sortera
                 4. Bästa Laddningstid (4h)
+                5. Visualisering
                 e. Avsluta
                 """;
         System.out.print(menu);
     }
 
-    private static void inputPrices(String[] hours, ArrayList<Integer> pricePerHour, Scanner sc) {
+    private static void inputPrices(Scanner sc) {
         pricePerHour.clear();
         for (int i = 0; i < 24; i++) {
             System.out.print("Pris klockan " + hours[i] + ": ");
@@ -58,19 +59,19 @@ public class App {
         sc.nextLine();
     }
 
-    private static void printMinMaxAverage(String[] hours, ArrayList<Integer> pricePerHour) {
+    private static void printMinMaxAverage() {
         if (pricePerHour.isEmpty()) {
-            System.out.print("Ingen data tillgänglig.");
+            System.out.print("Data saknas.");
             return;
         }
 
-        MinMaxAverage stats = getMinMaxAverage(pricePerHour);
+        MinMaxAverage stats = getMinMaxAverage();
         System.out.print("Lägsta pris: " + hours[stats.minIndex] + ", " + stats.min() + " öre/kWh\n"
                 + "Högsta pris: " + hours[stats.maxIndex] + ", " + stats.max() + " öre/kWh\n"
                 + "Medelpris: " + String.format("%.2f", stats.average()) + " öre/kWh\n");
     }
 
-    private static MinMaxAverage getMinMaxAverage(ArrayList<Integer> pricePerHour) {
+    private static MinMaxAverage getMinMaxAverage() {
         int min = Integer.MAX_VALUE;
         int minIndex = 0;
         int max = Integer.MIN_VALUE;
@@ -95,9 +96,9 @@ public class App {
         return new MinMaxAverage(min, minIndex, max, maxIndex, average);
     }
 
-    private static void sortAndPrintPrices(String[] hours, ArrayList<Integer> pricePerHour) {
+    private static void sortAndPrintPrices() {
         if (pricePerHour.isEmpty()) {
-            System.out.println("Ingen data att sortera.");
+            System.out.println("Data saknas.");
             return;
         }
 
@@ -115,8 +116,8 @@ public class App {
     }
 
     static class ValueAndIndex implements Comparable<ValueAndIndex> {
-        private int price;
-        private String hour;
+        private final int price;
+        private final String hour;
 
         public ValueAndIndex(int price, String hour) {
             this.price = price;
@@ -137,9 +138,9 @@ public class App {
         }
     }
 
-    static void cheapestChargingPeriod(String[] hours, ArrayList<Integer> pricePerHour) {
+    static void cheapestChargingPeriod() {
         if (pricePerHour.size() < 4) {
-            System.out.println("Listan är tom.");
+            System.out.println("Data saknas.");
             return;
         }
 
@@ -163,6 +164,48 @@ public class App {
 
         System.out.print("Påbörja laddning klockan " + startTime + "\n");
         System.out.print("Medelpris 4h: " + String.format("%.1f", averagePrice) + " öre/kWh\n");
+    }
+
+    static void visualization() {
+        MinMaxAverage stats = getMinMaxAverage();
+        float interval = (stats.max - stats.min) / 5.0f;
+        String[] rows = new String[6];
+
+        int maxPriceLength = String.valueOf(stats.max).length();
+        int minPriceLength = String.valueOf(stats.min).length();
+
+        for (int i = 0; i < rows.length; i++) {
+
+            if (i == 0) {
+                rows[i] = String.valueOf(stats.max);
+            } else if (i == rows.length - 1) {
+                rows[i] = " ".repeat(maxPriceLength - minPriceLength) + String.valueOf(stats.min);
+            } else {
+                rows[i] = " ".repeat(maxPriceLength);
+            }
+            rows[i] += "|";
+            int tempRow = 5 - i;
+            for (int j = 0; j < pricePerHour.size(); j++) {
+                int price = pricePerHour.get(j);
+
+                if (price >= (int) (stats.min + (interval * tempRow))) {
+                    rows[i] += "  x";
+                } else rows[i] += ("   ");
+            }
+        }
+
+        String[] bottom = new String[2];
+        bottom[0] = " ".repeat(maxPriceLength) + "|" + "-".repeat(72);
+        bottom[1] = " ".repeat(maxPriceLength) + "| ";
+        for (int i = 0; i < 24; i++) {
+            bottom[1] += String.format("%02d", i) + (i != 23 ? " " : "");
+        }
+
+        for (int i = 0; i < rows.length; i++) {
+            System.out.print(rows[i] + "\n");
+        }
+        System.out.print(bottom[0] + "\n");
+        System.out.print(bottom[1] + "\n");
     }
 
 }
@@ -194,4 +237,3 @@ class MinMaxAverage {
         return average;
     }
 }
-
